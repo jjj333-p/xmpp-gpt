@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Question</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            line-height: 1.4;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #ff6b6b;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background-color: #666666;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .back-btn:hover {
+            background-color: #555555;
+        }
+
+        .form-container {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 30px;
+            border-left: 3px solid #ff6b6b;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            color: #ff6b6b;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .question-textarea {
+            width: 100%;
+            min-height: 200px;
+            background-color: #1a1a1a;
+            border: 2px solid #444444;
+            border-radius: 6px;
+            padding: 15px;
+            color: #ffffff;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        .question-textarea:focus {
+            outline: none;
+            border-color: #ff6b6b;
+        }
+
+        .question-textarea::placeholder {
+            color: #888888;
+        }
+
+        .captcha-section {
+            background-color: #333333;
+            border-radius: 6px;
+            padding: 20px;
+            border: 1px solid #444444;
+        }
+
+        .captcha-question {
+            background-color: #1a1a1a;
+            border: 1px solid #444444;
+            border-radius: 4px;
+            padding: 15px;
+            color: #ffffff;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .captcha-input {
+            width: 100%;
+            background-color: #1a1a1a;
+            border: 2px solid #444444;
+            border-radius: 6px;
+            padding: 12px;
+            color: #ffffff;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .captcha-input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+        }
+
+        .captcha-input::placeholder {
+            color: #888888;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+        }
+
+        .submit-btn {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .submit-btn:hover {
+            background-color: #357abd;
+        }
+
+        .submit-btn:disabled {
+            background-color: #444444;
+            cursor: not-allowed;
+        }
+
+        .character-count {
+            color: #888888;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+
+            .back-btn {
+                text-align: center;
+            }
+
+            .form-container {
+                padding: 20px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>New Question</h1>
+        <a href="/{{.User}}/" class="back-btn">← Back to Questions</a>
+    </div>
+
+    <form action="/{{.User}}/submit-question" method="POST" class="form-container">
+        <input type="hidden" name="captchaID" value="{{.CaptchaID}}">
+        <div class="form-group">
+            <label for="question" class="form-label">Your Question</label>
+            <textarea
+                    id="question"
+                    name="question"
+                    class="question-textarea"
+                    placeholder="Enter your question here..."
+                    required
+                    maxlength="2000"
+            ></textarea>
+            <p class="character-count">2000 chars max</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Security Check</label>
+            <div class="captcha-section">
+                <div class="captcha-question">
+                    {{.CaptchaQuestion}}
+                </div>
+                <input
+                        type="text"
+                        name="captcha_answer"
+                        class="captcha-input"
+                        placeholder="Enter your answer..."
+                        required
+                        autocomplete="off"
+                >
+                <input type="hidden" name="captcha_id" value="{{.CaptchaID}}">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="submit-btn">Submit Question</button>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

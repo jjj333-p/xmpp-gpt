@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{$.User}}GPT's Answered Questions</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            line-height: 1.4;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #ff6b6b;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .new-query-btn {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .new-query-btn:hover {
+            background-color: #357abd;
+        }
+
+        .questions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .question-card {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 3px solid #ff6b6b;
+            transition: background-color 0.2s;
+        }
+
+        .question-card:hover {
+            background-color: #333333;
+        }
+
+        .question-id {
+            color: #ff6b6b;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .question-id a {
+            color: #ff6b6b;
+            text-decoration: none;
+            font-size: 20px;
+        }
+
+        .question-id a:hover {
+            text-decoration: underline;
+        }
+
+        .question-text {
+            color: #ff6b6b;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .question-content {
+            color: #ffffff;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .answer-text {
+            color: #ff6b6b;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .answer-content {
+            color: #cccccc;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .date-text {
+            color: #ff6b6b;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .date-content {
+            color: #999999;
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+
+            .new-query-btn {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>{{$.User}}GPT's Answered Questions</h1>
+        <a href="/{{$.User}}/new-query" class="new-query-btn">+ Ask {{$.User}}GPT</a>
+    </div>
+
+    <div class="questions-list">
+        {{range .Questions}}
+        <div class="question-card">
+            <div class="question-id">
+                <a href="/{{$.User}}/question/{{.ID}}">Question {{.ID}}</a>
+            </div>
+            <div class="question-content">
+                <span class="question-text">Question: </span>{{.Question}}
+            </div>
+            <div class="answer-content">
+                <span class="answer-text">Answer: </span>{{.Answer}}
+            </div>
+            <div class="date-content">
+                <span class="date-text">Date: </span>{{.Date}}
+            </div>
+        </div>
+        {{else}}
+        <h3>No questions yet 😕</h3>
+        {{end}}
+    </div>
+</div>
+</body>
+</html>
