@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/csv"
 	"fmt"
 	"html/template"
 	"log"
+	"math/big"
 	"net/http"
 	"os"
 	"sync"
@@ -30,12 +33,28 @@ type NewQuestionPageData struct {
 	CaptchaID       string
 }
 
+type captcha struct {
+	Question string
+	Answer   string
+}
+
 var captchaAnswers sync.Map
+
+func randomCaptcha() captcha {
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(len(captchas))))
+	if err != nil {
+		log.Printf("Error generating random number: %v", err)
+		return captchas[0]
+	}
+	return captchas[n.Int64()]
+}
 
 var questionListTmplt *template.Template
 var newQuestionTmplt *template.Template
 
 var qdb QuestionDB
+
+var captchas []captcha
 
 func questionListHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -62,10 +81,14 @@ func questionListHandler(w http.ResponseWriter, r *http.Request) {
 func newQuestionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
+	selectedCaptcha := randomCaptcha()
+	captchaID := uuid.New().String()
+	captchaAnswers.Store(captchaID, selectedCaptcha.Answer)
+
 	data := NewQuestionPageData{
 		User:            r.PathValue("user"),
-		CaptchaQuestion: "lorem ipsum dolor sit amet,",
-		CaptchaID:       "someUUIDhere",
+		CaptchaQuestion: selectedCaptcha.Question,
+		CaptchaID:       captchaID,
 	}
 
 	err := newQuestionTmplt.Execute(w, data)
@@ -92,12 +115,12 @@ func submitQuestionHandler(w http.ResponseWriter, r *http.Request) {
 	captchaAnswer := r.FormValue("captcha_answer")
 
 	fmt.Println(captchaID, captchaAnswer)
-	//// Verify captcha
-	//if expectedAnswer, ok := captchaAnswers.Load(captchaID); !ok || expectedAnswer != captchaAnswer {
-	//	http.Error(w, "Invalid captcha answer", http.StatusBadRequest)
-	//	return
-	//}
-	//captchaAnswers.Delete(captchaID)
+	// Verify captcha
+	if expectedAnswer, ok := captchaAnswers.Load(captchaID); !ok || expectedAnswer != captchaAnswer {
+		http.Error(w, "Invalid captcha answer", http.StatusBadRequest)
+		return
+	}
+	captchaAnswers.Delete(captchaID)
 
 	id := uuid.New().String()
 
@@ -136,6 +159,28 @@ func main() {
 	err = yaml.Unmarshal(configData, &cfg)
 	if err != nil {
 		log.Fatal("error parsing config:", err)
+	}
+
+	fmt.Println("Loading captchas...")
+	file, err := os.Open("./captcha.csv")
+	if err != nil {
+		log.Fatalf("error opening captchas file: %v", err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		log.Fatalf("error reading captchas: %v", err)
+	}
+
+	for _, record := range records {
+		if len(record) == 2 {
+			captchas = append(captchas, captcha{
+				Question: record[0],
+				Answer:   record[1],
+			})
+		}
 	}
 
 	fmt.Println("connecting to database...")
