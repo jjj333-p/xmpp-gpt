@@ -117,6 +117,38 @@ func (qdb *QuestionDB) GetByUserIDWithLimit(ctx context.Context, userID string, 
 	return questions, nil
 }
 
+// GetByUserIDWithLimitAnswered retrieves answered questions for a user with pagination
+func (qdb *QuestionDB) GetByUserIDWithLimitAnswered(ctx context.Context, userID string, limit, offset int) ([]Question, error) {
+	query := `
+		SELECT id, user_id, question, answer, created_at, updated_at
+		FROM questions
+		WHERE user_id = $1 AND answer != ''
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3`
+
+	rows, err := qdb.pool.Query(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get answered questions with limit: %w", err)
+	}
+	defer rows.Close()
+
+	var questions []Question
+	for rows.Next() {
+		q := Question{}
+		err := rows.Scan(&q.ID, &q.UserID, &q.Question, &q.Answer, &q.CreatedAt, &q.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan question row: %w", err)
+		}
+		questions = append(questions, q)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating question rows: %w", err)
+	}
+
+	return questions, nil
+}
+
 // Update modifies an existing question's answer
 func (qdb *QuestionDB) Update(ctx context.Context, id, newAnswer string) error {
 	query := `

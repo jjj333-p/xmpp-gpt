@@ -45,7 +45,7 @@ func questionListHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "user needs to be provided", http.StatusBadRequest)
 	}
 
-	questions, err := qdb.GetByUserIDWithLimit(context.TODO(), user, 100, 0)
+	questions, err := qdb.GetByUserIDWithLimitAnswered(context.TODO(), user, 100, 0)
 
 	data := ListPageData{
 		User:      user,
