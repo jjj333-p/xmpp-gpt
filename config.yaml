@@ -1,0 +1,1 @@
+pg_url: "postgresql://joseph:new_password_here@localhost:5432/questions_db"

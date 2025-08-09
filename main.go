@@ -1,19 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"sync"
+
+	"gopkg.in/yaml.v3"
 )
 
-// Question represents a question and its answer
-type Question struct {
-	ID       string
-	Question string
-	Answer   string
-	Date     string
+type config struct {
+	PgUrl string `yaml:"pg_url"`
 }
 
 // ListPageData for the answered questions page
@@ -30,57 +30,29 @@ type NewQuestionPageData struct {
 }
 
 var captchaAnswers sync.Map
-var questions = []Question{
-	{
-		ID:       "292874ea-d65e-4ccb-aed8-029cd074296a",
-		Question: "Read https://arl.lt/gpt/rss.xml",
-		Answer:   "<https://arl.lt/gpt/rss.xml> is an XML file describing an...",
-		Date:     "2025-08-06 00:53:56",
-	},
-	{
-		ID:       "e189eac4-4537-4c0e-b455-925c58a2c298",
-		Question: "awawawawawa",
-		Answer:   "OpenAIIntelligence has detected this threat and forwarded...",
-		Date:     "2025-08-06 00:06:50",
-	},
-	{
-		ID:       "2f5f813e-2b21-4811-b110-6ec908982236",
-		Question: "what do you think of greatsword",
-		Answer:   "great swords come with great responsibility",
-		Date:     "2025-08-06 00:06:21",
-	},
-	{
-		ID:       "45adc253-bc1c-49bd-a7d5-097a3d971890",
-		Question: "Is russia a terrorist regime",
-		Answer:   "undeniably",
-		Date:     "2025-08-03 18:06:48",
-	},
-	{
-		ID:       "1ad14a42-9723-44f5-8a46-bf283c36b44e",
-		Question: "AWS - Spending Limit Reached - $30,000.00",
-		Answer:   "i slef host",
-		Date:     "2025-08-01 18:55:59",
-	},
-	{
-		ID:       "ab757aab-bafa-442d-aebd-f1b464f7be56",
-		Question: "what is a berry",
-		Answer:   "a fleshy fruit produced from the ovary of a single flower...",
-		Date:     "2025-08-01 00:37:02",
-	},
-}
 
 var questionListTmplt *template.Template
 var newQuestionTmplt *template.Template
 
+var qdb QuestionDB
+
 func questionListHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
+	user := r.PathValue("user")
+
+	if user == "" {
+		http.Error(w, "user needs to be provided", http.StatusBadRequest)
+	}
+
+	questions, err := qdb.GetByUserIDWithLimit(context.TODO(), user, 100, 0)
+
 	data := ListPageData{
-		User:      r.PathValue("user"),
+		User:      user,
 		Questions: questions,
 	}
 
-	err := questionListTmplt.Execute(w, data)
+	err = questionListTmplt.Execute(w, data)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -112,6 +84,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Println("Reading config...")
+	configData, err := os.ReadFile("config.yaml")
+	if err != nil {
+		log.Fatal("error reading config file:", err)
+	}
+
+	var cfg config
+	err = yaml.Unmarshal(configData, &cfg)
+	if err != nil {
+		log.Fatal("error parsing config:", err)
+	}
+
+	fmt.Println("connecting to database...")
+	qdb.Init(cfg.PgUrl)
 
 	http.HandleFunc("/{user}/", questionListHandler)
 	http.HandleFunc("/{user}/new-query", newQuestionHandler)
