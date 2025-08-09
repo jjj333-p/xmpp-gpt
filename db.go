@@ -42,29 +42,17 @@ func (qdb *QuestionDB) Close() {
 }
 
 // CreateWithID inserts a question with a specific ID
-func (qdb *QuestionDB) CreateWithID(ctx context.Context, id, userID, question string) (*Question, error) {
-
-	var createdAt time.Time
-	var updatedAt time.Time
-
+func (qdb *QuestionDB) CreateWithID(ctx context.Context, id, userID, question string) error {
 	query := `
 		INSERT INTO questions (id, user_id, question, answer)
-		VALUES ($1, $2, $3, $4)
-		RETURNING created_at, updated_at`
+		VALUES ($1, $2, $3, $4)`
 
-	err := qdb.pool.QueryRow(ctx, query, id, userID, question).
-		Scan(&createdAt, &updatedAt)
+	err := qdb.pool.QueryRow(ctx, query, id, userID, question).Scan()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create question with ID: %w", err)
+		return fmt.Errorf("failed to create question with ID: %w", err)
 	}
 
-	return &Question{
-		ID:        id,
-		UserID:    userID,
-		Question:  question,
-		CreatedAt: createdAt,
-		UpdatedAt: updatedAt,
-	}, nil
+	return nil
 }
 
 // GetByID retrieves a question by its ID
