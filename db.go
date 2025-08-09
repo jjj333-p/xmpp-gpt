@@ -41,13 +41,12 @@ func (qdb *QuestionDB) Close() {
 	qdb.pool.Close()
 }
 
-// CreateWithID inserts a question with a specific ID
 func (qdb *QuestionDB) CreateWithID(ctx context.Context, id, userID, question string) error {
 	query := `
-		INSERT INTO questions (id, user_id, question, answer)
-		VALUES ($1, $2, $3, $4)`
+		INSERT INTO questions (id, user_id, question)
+		VALUES ($1, $2, $3)`
 
-	err := qdb.pool.QueryRow(ctx, query, id, userID, question).Scan()
+	_, err := qdb.pool.Exec(ctx, query, id, userID, question)
 	if err != nil {
 		return fmt.Errorf("failed to create question with ID: %w", err)
 	}

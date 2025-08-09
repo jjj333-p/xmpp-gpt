@@ -9,6 +9,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
 )
 
@@ -73,6 +74,46 @@ func newQuestionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func submitQuestionHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		return
+	}
+
+	user := r.PathValue("user")
+	question := r.FormValue("question")
+	captchaID := r.FormValue("captcha_id")
+	captchaAnswer := r.FormValue("captcha_answer")
+
+	fmt.Println(captchaID, captchaAnswer)
+	//// Verify captcha
+	//if expectedAnswer, ok := captchaAnswers.Load(captchaID); !ok || expectedAnswer != captchaAnswer {
+	//	http.Error(w, "Invalid captcha answer", http.StatusBadRequest)
+	//	return
+	//}
+	//captchaAnswers.Delete(captchaID)
+
+	id := uuid.New().String()
+
+	// Save question to database
+	err = qdb.CreateWithID(context.TODO(), id, user, question)
+	if err != nil {
+		errStr := fmt.Sprintf("Error creating question %s: %v\n", question, err)
+		fmt.Println(errStr)
+		http.Error(w, errStr, http.StatusInternalServerError)
+		return
+	}
+
+	// Redirect back to the user's question list
+	http.Redirect(w, r, "/"+user+"/", http.StatusSeeOther)
+}
+
 func main() {
 	fmt.Println("Parsing templates...")
 	var err error
@@ -102,9 +143,9 @@ func main() {
 
 	http.HandleFunc("/{user}/", questionListHandler)
 	http.HandleFunc("/{user}/new-query", newQuestionHandler)
+	http.HandleFunc("/{user}/submit-question", submitQuestionHandler)
 	//http.HandleFunc("/", homeHandler)
 	//http.HandleFunc("/new-query", newQueryHandler)
-	//http.HandleFunc("/submit-question", submitQuestionHandler)
 	//http.HandleFunc("/refresh-captcha", refreshCaptchaHandler)
 	//http.HandleFunc("/question/", questionHandler)
 
